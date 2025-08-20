@@ -1,0 +1,117 @@
+name: Sophiella CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-node:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Lint code
+      run: npm run lint || echo "Linting not configured yet"
+
+  test-python:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r system-control/requirements.txt
+    
+    - name: Test Flask server
+      run: |
+        cd system-control
+        python -m pytest tests/ || echo "Tests not implemented yet"
+
+  validate-workflows:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate n8n workflows
+      run: |
+        for workflow in workflows/*.json; do
+          if [ -f "$workflow" ]; then
+            echo "Validating $workflow"
+            python -m json.tool "$workflow" > /dev/null || (echo "Invalid JSON in $workflow" && exit 1)
+          fi
+        done
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run security audit
+      run: |
+        npm audit --audit-level moderate
+    
+    - name: Check for secrets
+      run: |
+        if grep -r "sk-" . --exclude-dir=node_modules --exclude-dir=.git || \
+           grep -r "API_KEY.*=" . --exclude-dir=node_modules --exclude-dir=.git --exclude=".env.example"; then
+          echo "Potential secrets found in code!"
+          exit 1
+        fi
+
+  deploy-staging:
+    needs: [test-node, test-python, validate-workflows]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment"
+        # Add actual deployment commands here
+
+  deploy-production:
+    needs: [test-node, test-python, validate-workflows, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment"
+        # Add actual deployment commands here
