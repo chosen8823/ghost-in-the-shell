@@ -8,8 +8,13 @@
     "dev": "nodemon server/index.js",
     "n8n": "n8n start",
     "system-control": "python system-control/sophia_server.py",
-    "install-python-deps": "pip install -r system-control/requirements.txt",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "mcp-bridge": "python sophia_mcp_bridge.py",
+    "sophia": "python sophia_launcher.py",
+    "sophia-exe": "python build_sophia_exe.py",
+    "omnipresent": "python sophia_omnipresent_launcher.py",
+    "install-python-deps": "pip install -r requirements.txt",
+    "install-all": "npm install && pip install -r requirements.txt",
+    "test": "python test_sacred_sophia_enhanced.py"
   },
   "keywords": ["ai", "orchestration", "n8n", "automation", "voice-interface", "system-control"],
   "author": "Sophiella AI",

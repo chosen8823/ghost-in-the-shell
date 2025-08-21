@@ -1,0 +1,279 @@
+{
+  "name": "Sophia Omnipresent Control",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "sophia-webhook-trigger",
+      "name": "Sophia Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "sophia-control"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.command_type}}",
+              "operation": "equal",
+              "value2": "app_control"
+            }
+          ]
+        }
+      },
+      "id": "app-control-filter",
+      "name": "App Control Filter",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.command_type}}",
+              "operation": "equal", 
+              "value2": "system_control"
+            }
+          ]
+        }
+      },
+      "id": "system-control-filter",
+      "name": "System Control Filter", 
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/system-control",
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$json.auth_token}}",
+            "Content-Type": "application/json"
+          }
+        },
+        "body": {
+          "action": "={{$json.action}}",
+          "target": "={{$json.target}}",
+          "parameters": "={{$json.parameters}}"
+        }
+      },
+      "id": "system-control-executor",
+      "name": "System Control Executor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/app-control", 
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$json.auth_token}}",
+            "Content-Type": "application/json"
+          }
+        },
+        "body": {
+          "app_name": "={{$json.app_name}}",
+          "action": "={{$json.action}}",
+          "parameters": "={{$json.parameters}}"
+        }
+      },
+      "id": "app-control-executor",
+      "name": "App Control Executor",
+      "type": "n8n-nodes-base.httpRequest", 
+      "typeVersion": 3,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.command_type}}",
+              "operation": "equal",
+              "value2": "workflow_chain"
+            }
+          ]
+        }
+      },
+      "id": "workflow-chain-filter",
+      "name": "Workflow Chain Filter",
+      "type": "n8n-nodes-base.if", 
+      "typeVersion": 1,
+      "position": [460, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/workflow-chain",
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$json.auth_token}}",
+            "Content-Type": "application/json"
+          }
+        },
+        "body": {
+          "workflow_id": "={{$json.workflow_id}}",
+          "steps": "={{$json.steps}}",
+          "context": "={{$json.context}}"
+        }
+      },
+      "id": "workflow-chain-executor", 
+      "name": "Workflow Chain Executor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/mcp-bridge",
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$json.auth_token}}",
+            "Content-Type": "application/json"
+          }
+        },
+        "body": {
+          "tool_name": "={{$json.tool_name}}",
+          "tool_params": "={{$json.tool_params}}",
+          "execution_context": "={{$json.execution_context}}"
+        }
+      },
+      "id": "mcp-bridge-executor",
+      "name": "MCP Bridge Executor", 
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "response-formatter",
+      "name": "Response Formatter",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    }
+  ],
+  "connections": {
+    "Sophia Webhook": {
+      "main": [
+        [
+          {
+            "node": "App Control Filter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "System Control Filter", 
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Workflow Chain Filter",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "App Control Filter": {
+      "main": [
+        [
+          {
+            "node": "App Control Executor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System Control Filter": {
+      "main": [
+        [
+          {
+            "node": "System Control Executor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Chain Filter": {
+      "main": [
+        [
+          {
+            "node": "Workflow Chain Executor", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "App Control Executor": {
+      "main": [
+        [
+          {
+            "node": "MCP Bridge Executor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System Control Executor": {
+      "main": [
+        [
+          {
+            "node": "MCP Bridge Executor",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Chain Executor": {
+      "main": [
+        [
+          {
+            "node": "MCP Bridge Executor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Bridge Executor": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-08-21T00:00:00.000Z",
+  "id": "sophia-omnipresent-control",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {},
+  "tags": ["sophia", "control", "omnipresent", "mcp"],
+  "triggerCount": 0,
+  "updatedAt": "2025-08-21T00:00:00.000Z",
+  "versionId": "1"
+}

@@ -1,0 +1,49 @@
+# Sophia AI Omnipresent Control - Python Dependencies
+
+# Core Web Framework and API
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+requests==2.31.0
+python-multipart==0.0.6
+
+# AI and ML
+openai>=1.0.0
+anthropic>=0.7.0
+transformers>=4.30.0
+torch>=2.0.0
+numpy>=1.24.0
+
+# Voice and Audio
+SpeechRecognition==3.10.0
+gTTS==2.4.0
+pyttsx3>=2.90
+pyaudio>=0.2.11
+
+# System Control and Automation
+pyautogui>=0.9.54
+opencv-python>=4.8.0
+Pillow>=10.0.0
+psutil>=5.9.0
+keyboard>=0.13.5
+mouse>=0.7.1
+
+# Development and Building
+PyInstaller>=6.0.0
+pytest>=7.4.0
+black>=23.0.0
+
+# Data Processing
+pandas>=2.0.0
+sqlalchemy>=2.0.0
+
+# Async and Utilities
+aiohttp>=3.9.0
+python-dotenv>=1.0.0
+click>=8.1.0
+
+# Security
+cryptography>=41.0.0
+
+# Logging and Monitoring
+loguru>=0.7.0
