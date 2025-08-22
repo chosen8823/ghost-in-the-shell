@@ -1,0 +1,43 @@
+﻿# Sacred Sophia Project .gitignore
+# Comprehensive exclusions for the Sacred Multi-Agent System
+
+# Node modules and dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+ENV/
+env/
+.venv
+
+# VS Code
+.vscode/
+*.vsix
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+sophia_daemon.log
+emergency_stop_log.json
+
+# Runtime data
+sacred_pids.txt
+
+# Google Cloud credentials (keep safe!)
+*.json
+!package.json
+!tsconfig.json
+
+# Sacred Sophia specific
+*.webp
+*.zip

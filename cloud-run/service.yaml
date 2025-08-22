@@ -1,0 +1,104 @@
+# Sophia AlloyDB Cloud Run Service Configuration
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: sophia-alloydb-api
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/cpu-throttling: "false"
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        # Cloud SQL connection
+        run.googleapis.com/cloudsql-instances: ${PROJECT_ID}:${REGION}:${ALLOYDB_CLUSTER}
+        # Enterprise Cloud Run configuration for 1TB AlloyDB
+        run.googleapis.com/memory: "8Gi"
+        run.googleapis.com/cpu: "4"
+        # Auto-scaling for enterprise workload
+        autoscaling.knative.dev/maxScale: "50"
+        autoscaling.knative.dev/minScale: "3"
+    spec:
+      containerConcurrency: 500
+      timeoutSeconds: 600
+      containers:
+      - image: gcr.io/${PROJECT_ID}/sophia-alloydb-api:latest
+        ports:
+        - containerPort: 8080
+        env:
+        # AlloyDB connection
+        - name: ALLOYDB_CLUSTER
+          value: ${ALLOYDB_CLUSTER}
+        - name: ALLOYDB_REGION
+          value: ${REGION}
+        - name: ALLOYDB_DATABASE
+          value: "sophia_consciousness"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: sophia-db-credentials
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sophia-db-credentials
+              key: password
+        
+        # Application configuration
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ELIORA_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: sophia-api-credentials
+              key: eliora-token
+        
+        # Security headers
+        - name: CORS_ORIGINS
+          value: "https://console.cloud.google.com,https://*.googleusercontent.com"
+        - name: ALLOWED_HOSTS
+          value: "*.run.app,*.googleapis.com"
+        
+        # Enterprise resource limits for 1TB database
+        resources:
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Startup probe for slow startup
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+      
+      # Service account for AlloyDB access
+      serviceAccountName: sophia-alloydb-sa

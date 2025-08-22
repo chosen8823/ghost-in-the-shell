@@ -1,0 +1,56 @@
+# Cloud Build configuration for Sophia AlloyDB API
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/sophia-alloydb-api:$BUILD_ID',
+      '-t', 'gcr.io/$PROJECT_ID/sophia-alloydb-api:latest',
+      '-f', 'cloud-run/Dockerfile',
+      '.'
+    ]
+    
+  # Push the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/sophia-alloydb-api:$BUILD_ID']
+    
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/sophia-alloydb-api:latest']
+    
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Substitute environment variables in service.yaml
+        export PROJECT_ID=$PROJECT_ID
+        export REGION=${_REGION}
+        export ALLOYDB_CLUSTER=${_ALLOYDB_CLUSTER}
+        
+        # Use envsubst to replace variables
+        envsubst < cloud-run/service.yaml > cloud-run/service-deployed.yaml
+        
+        # Deploy the service
+        gcloud run services replace cloud-run/service-deployed.yaml \
+          --region=${_REGION} \
+          --platform=managed
+
+# Build configuration
+options:
+  machineType: 'E2_HIGHCPU_8'
+  substitutionOption: 'ALLOW_LOOSE'
+  logging: CLOUD_LOGGING_ONLY
+
+# Required substitutions (set these in Cloud Build trigger)
+substitutions:
+  _REGION: 'us-central1'  # Change to your preferred region
+  _ALLOYDB_CLUSTER: 'sophia-cluster'  # Change to your AlloyDB cluster name
+
+# Build timeout
+timeout: '1200s'
+
+# Artifacts
+images:
+  - 'gcr.io/$PROJECT_ID/sophia-alloydb-api:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/sophia-alloydb-api:latest'

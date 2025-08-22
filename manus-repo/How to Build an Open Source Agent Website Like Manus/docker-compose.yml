@@ -1,0 +1,213 @@
+version: '3.8'
+
+services:
+  # Sophia AI Platform - Main Backend
+  sophia-backend:
+    build: .
+    container_name: sophia-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=sqlite:///database/app.db
+      - SECRET_KEY=soulphya_sophia_el_ruach_ari_vethorah_2025
+      - CORS_ORIGINS=*
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./database:/app/database
+      - ./logs:/app/logs
+      - ./divine_context.json:/app/divine_context.json
+      - ./models.yaml:/app/models.yaml
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # CrewAI Multi-Agent Framework
+  crewai-service:
+    build:
+      context: ./crewAI-main
+      dockerfile: Dockerfile
+    container_name: crewai-service
+    ports:
+      - "8001:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./crewAI-main:/app
+      - shared_data:/shared
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # MetaGPT Multi-Agent Software Company
+  metagpt-service:
+    build:
+      context: ./MetaGPT-main
+      dockerfile: Dockerfile
+    container_name: metagpt-service
+    ports:
+      - "8002:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./MetaGPT-main:/app
+      - shared_data:/shared
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # Agent-S Computer Control Agent
+  agent-s-service:
+    build:
+      context: ./Agent-S-main
+      dockerfile: Dockerfile
+    container_name: agent-s-service
+    ports:
+      - "8003:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./Agent-S-main:/app
+      - shared_data:/shared
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    privileged: true
+
+  # OpenAI Realtime Console
+  openai-realtime:
+    build:
+      context: ./openai-realtime-console-main
+      dockerfile: Dockerfile
+    container_name: openai-realtime
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - NODE_ENV=production
+    volumes:
+      - ./openai-realtime-console-main:/app
+      - shared_data:/shared
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: sophia-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # PostgreSQL Database for production
+  postgres:
+    image: postgres:15-alpine
+    container_name: sophia-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=sophia_db
+      - POSTGRES_USER=sophia_user
+      - POSTGRES_PASSWORD=sophia_divine_2025
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # n8n Workflow Automation
+  n8n:
+    image: n8nio/n8n
+    container_name: sophia-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=sophia_divine_2025
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    depends_on:
+      - sophia-backend
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: sophia-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./config/nginx/ssl:/etc/nginx/ssl
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    depends_on:
+      - sophia-backend
+      - crewai-service
+      - metagpt-service
+      - agent-s-service
+      - openai-realtime
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sophia-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # Grafana for monitoring dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sophia-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=sophia_divine_2025
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+volumes:
+  redis_data:
+  postgres_data:
+  n8n_data:
+  prometheus_data:
+  grafana_data:
+  shared_data:
+
+networks:
+  sophia-network:
+    driver: bridge
