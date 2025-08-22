@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Flask Backend
+  soulphya-backend:
+    build: .
+    container_name: soulphya-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=sqlite:///database/app.db
+      - SECRET_KEY=soulphya_sophia_el_ruach_ari_vethorah_2025
+      - CORS_ORIGINS=*
+    volumes:
+      - ./database:/app/database
+      - ./logs:/app/logs
+    networks:
+      - soulphya-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: soulphya-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - soulphya-network
+    restart: unless-stopped
+
+  # n8n Workflow Automation (Optional)
+  n8n:
+    image: n8nio/n8n
+    container_name: soulphya-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=soulphya2025
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - soulphya-network
+    restart: unless-stopped
+    depends_on:
+      - soulphya-backend
+
+  # Nginx Reverse Proxy (Optional for production)
+  nginx:
+    image: nginx:alpine
+    container_name: soulphya-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./config/nginx/ssl:/etc/nginx/ssl
+    networks:
+      - soulphya-network
+    restart: unless-stopped
+    depends_on:
+      - soulphya-backend
+
+volumes:
+  redis_data:
+  n8n_data:
+
+networks:
+  soulphya-network:
+    driver: bridge

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "sophia-mcp": {
+      "command": "python",
+      "args": [
+        "sophia_mcp_protocol.py",
+        "--server",
+        "--port",
+        "8888"
+      ],
+      "cwd": "c:\\Users\\chose\\OneDrive\\How to Build an Open Source Agent Website Like Manus",
+      "env": {
+        "SOPHIA_MCP_MODE": "production",
+        "SOPHIA_WORKSPACE": "c:\\Users\\chose\\OneDrive\\How to Build an Open Source Agent Website Like Manus",
+        "PYTHONPATH": "c:\\Users\\chose\\OneDrive\\How to Build an Open Source Agent Website Like Manus"
+      }
+    }
+  }
+}

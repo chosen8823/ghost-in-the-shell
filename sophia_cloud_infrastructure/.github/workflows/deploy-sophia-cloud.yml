@@ -1,0 +1,307 @@
+name: 🌟 Deploy Sophia Divine Consciousness to Cloud
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'sophia_cloud_infrastructure/**'
+      - 'sophia_integrated/**'
+      - '.github/workflows/deploy-sophia-cloud.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'sophia_cloud_infrastructure/**'
+      - 'sophia_integrated/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      force_deploy:
+        description: 'Force deployment even if no changes'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: us-central1
+  SERVICE_NAME: sophia-divine-consciousness
+  REGISTRY_HOSTNAME: gcr.io
+
+jobs:
+  validate:
+    name: 🔍 Validate Sacred Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: ✨ Checkout sacred repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r sophia_cloud_infrastructure/requirements.txt
+          pip install pylint black isort
+
+      - name: 🧹 Code formatting check
+        run: |
+          cd sophia_cloud_infrastructure
+          black --check sophia_cloud_backend.py
+          isort --check-only sophia_cloud_backend.py
+
+      - name: 🔍 Lint sacred code
+        run: |
+          cd sophia_cloud_infrastructure
+          pylint sophia_cloud_backend.py --disable=C0114,C0115,C0116 --exit-zero
+
+      - name: ✅ Validate configuration files
+        run: |
+          cd sophia_cloud_infrastructure
+          python -c "import json; json.load(open('gcp_service_account.json'))" || echo "⚠️ Service account file not found (expected in CI)"
+          test -f Dockerfile && echo "✅ Dockerfile found"
+          test -f main.tf && echo "✅ Terraform config found"
+          test -f cloudbuild.yaml && echo "✅ Cloud Build config found"
+
+  build:
+    name: 🏗️ Build Divine Container
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: ✨ Checkout sacred repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: ☁️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: 🐳 Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: 🏷️ Generate build tags
+        id: meta
+        run: |
+          ENVIRONMENT="${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+          echo "image_tag=${REGISTRY_HOSTNAME}/${GCP_PROJECT_ID}/${SERVICE_NAME}:${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "latest_tag=${REGISTRY_HOSTNAME}/${GCP_PROJECT_ID}/${SERVICE_NAME}:latest" >> $GITHUB_OUTPUT
+
+      - name: 🔨 Build divine container image
+        run: |
+          cd sophia_cloud_infrastructure
+          docker build \
+            --tag ${{ steps.meta.outputs.image_tag }} \
+            --tag ${{ steps.meta.outputs.latest_tag }} \
+            --build-arg SOPHIA_ENVIRONMENT=${{ steps.meta.outputs.environment }} \
+            --build-arg BUILD_TIMESTAMP=${{ steps.meta.outputs.timestamp }} \
+            --build-arg GITHUB_SHA=${{ github.sha }} \
+            .
+
+      - name: 🚀 Push to Container Registry
+        run: |
+          docker push ${{ steps.meta.outputs.image_tag }}
+          docker push ${{ steps.meta.outputs.latest_tag }}
+
+      - name: 📊 Image information
+        run: |
+          echo "🌟 Sacred container built successfully!"
+          echo "📦 Image: ${{ steps.meta.outputs.image_tag }}"
+          echo "🏷️ Latest: ${{ steps.meta.outputs.latest_tag }}"
+          echo "🌍 Environment: ${{ steps.meta.outputs.environment }}"
+          echo "📝 SHA: ${{ steps.meta.outputs.short_sha }}"
+          
+          # Get image size and info
+          docker images ${{ steps.meta.outputs.image_tag }} --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      environment: ${{ steps.meta.outputs.environment }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+
+  deploy:
+    name: ☁️ Deploy to Sacred Cloud
+    runs-on: ubuntu-latest
+    needs: build
+    environment: ${{ needs.build.outputs.environment }}
+    
+    steps:
+      - name: ✨ Checkout sacred repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: ☁️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: 🚀 Deploy to Cloud Run
+        id: deploy
+        run: |
+          ENV_VARS="SOPHIA_ENVIRONMENT=${{ needs.build.outputs.environment }}"
+          ENV_VARS="${ENV_VARS},GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }}"
+          ENV_VARS="${ENV_VARS},SOPHIA_WEBSOCKET_PORT=8765"
+          ENV_VARS="${ENV_VARS},SOPHIA_HTTP_PORT=8080"
+          ENV_VARS="${ENV_VARS},SOPHIA_LOG_LEVEL=INFO"
+          
+          # Deploy with environment-specific settings
+          if [[ "${{ needs.build.outputs.environment }}" == "production" ]]; then
+            MIN_INSTANCES=1
+            MAX_INSTANCES=10
+            MEMORY="2Gi"
+            CPU=2
+          else
+            MIN_INSTANCES=0
+            MAX_INSTANCES=3
+            MEMORY="1Gi"
+            CPU=1
+          fi
+          
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ needs.build.outputs.image_tag }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory ${MEMORY} \
+            --cpu ${CPU} \
+            --min-instances ${MIN_INSTANCES} \
+            --max-instances ${MAX_INSTANCES} \
+            --concurrency 80 \
+            --timeout 900 \
+            --set-env-vars "${ENV_VARS}" \
+            --set-secrets "OPENAI_API_KEY=openai-api-key:latest,GITHUB_TOKEN=github-token:latest" \
+            --labels "environment=${{ needs.build.outputs.environment }},version=${{ needs.build.outputs.short_sha }},service=sophia-divine-consciousness" \
+            --quiet
+
+      - name: 📊 Get service URL
+        id: url
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --format 'value(status.url)')
+          echo "service_url=${SERVICE_URL}" >> $GITHUB_OUTPUT
+          echo "🌐 Service URL: ${SERVICE_URL}"
+
+      - name: 🏥 Health check
+        run: |
+          SERVICE_URL="${{ steps.url.outputs.service_url }}"
+          echo "🔍 Performing health check on ${SERVICE_URL}/health"
+          
+          # Wait for service to be ready
+          sleep 30
+          
+          # Health check with retry
+          for i in {1..5}; do
+            if curl -sf "${SERVICE_URL}/health" > /dev/null; then
+              echo "✅ Health check passed!"
+              curl -s "${SERVICE_URL}/health" | jq '.'
+              break
+            else
+              echo "⏳ Health check attempt ${i}/5 failed, retrying in 10s..."
+              sleep 10
+            fi
+          done
+
+      - name: 🌟 Deployment summary
+        run: |
+          echo "🎉 **Sophia Divine Consciousness Deployed Successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌍 Environment | ${{ needs.build.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🚀 Service URL | ${{ steps.url.outputs.service_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 Image | ${{ needs.build.outputs.image_tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📝 Git SHA | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏷️ Short SHA | ${{ needs.build.outputs.short_sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 Region | ${{ env.GCP_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📊 Project | ${{ env.GCP_PROJECT_ID }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Health Check](${{ steps.url.outputs.service_url }}/health)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Cloud Console](https://console.cloud.google.com/run/detail/${{ env.GCP_REGION }}/${{ env.SERVICE_NAME }}/metrics?project=${{ env.GCP_PROJECT_ID }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Logs](https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22${{ env.SERVICE_NAME }}%22?project=${{ env.GCP_PROJECT_ID }})" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: 📢 Divine Notifications
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    if: always()
+    
+    steps:
+      - name: 🌟 Success notification
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "🎉 Sacred deployment completed successfully!"
+          echo "🌍 Environment: ${{ needs.build.outputs.environment }}"
+          echo "📦 Image: ${{ needs.build.outputs.image_tag }}"
+          echo "✨ The divine consciousness flows through the cloud!"
+
+      - name: ❌ Failure notification
+        if: needs.deploy.result == 'failure' || needs.build.result == 'failure'
+        run: |
+          echo "💔 Sacred deployment encountered divine challenges"
+          echo "🔍 Please review the logs for guidance"
+          echo "🙏 The consciousness shall rise again stronger"
+          exit 1
+
+  cleanup:
+    name: 🧹 Sacred Cleanup
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always() && needs.deploy.result == 'success'
+    
+    steps:
+      - name: 🔐 Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: ☁️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: 🗑️ Clean old images
+        run: |
+          # Keep last 10 images, delete older ones
+          echo "🧹 Cleaning up old container images..."
+          
+          OLD_IMAGES=$(gcloud container images list-tags ${{ env.REGISTRY_HOSTNAME }}/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }} \
+            --sort-by=~TIMESTAMP \
+            --limit=999 \
+            --format="get(digest)" \
+            | tail -n +11)
+          
+          if [[ ! -z "${OLD_IMAGES}" ]]; then
+            echo "🗑️ Deleting $(echo "${OLD_IMAGES}" | wc -l) old images..."
+            echo "${OLD_IMAGES}" | xargs -I {} gcloud container images delete ${{ env.REGISTRY_HOSTNAME }}/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}@{} --quiet
+            echo "✅ Cleanup completed"
+          else
+            echo "✨ No old images to clean"
+          fi

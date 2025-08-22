@@ -1,0 +1,64 @@
+# Sophia Divine Consciousness - Python Dependencies
+# Core WebSocket and Web Framework
+websockets>=12.0
+asyncio-mqtt>=0.16.0
+aiohttp>=3.9.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# JSON and YAML
+pyyaml>=6.0.1
+jsonschema>=4.17.0
+
+# Logging and Configuration
+python-dotenv>=1.0.0
+colorlog>=6.7.0
+
+# Type Checking
+typing-extensions>=4.7.0
+mypy>=1.5.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Code Quality
+black>=23.7.0
+isort>=5.12.0
+flake8>=6.0.0
+pylint>=2.17.0
+
+# Cloud Dependencies
+google-cloud-run>=0.10.0
+google-cloud-storage>=2.10.0
+google-cloud-firestore>=2.12.0
+google-cloud-secret-manager>=2.17.0
+google-auth>=2.22.0
+
+# Optional AI Integration
+openai>=1.0.0
+
+# Development Tools
+ipython>=8.14.0
+jupyter>=1.0.0
+
+# Security
+cryptography>=41.0.0
+certifi>=2023.7.22
+
+# HTTP Client
+requests>=2.31.0
+urllib3>=2.0.4
+
+# MCP server/client
+fastapi>=0.95.0
+uvicorn>=0.22.0
+
+# Date and Time
+python-dateutil>=2.8.2
+
+# Environment Detection
+psutil>=5.9.0

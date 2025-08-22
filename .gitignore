@@ -67,6 +67,7 @@ n8n-data/
 # Google Cloud
 .gcloudignore
 service-account-key.json
+gcp_service_account.json
 
 # OS
 .DS_Store

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 Sophia WebSocket Bridge - Browser Client 🌟</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .status.disconnected {
+            background: rgba(220, 53, 69, 0.3);
+            border: 2px solid #dc3545;
+        }
+        
+        .status.connected {
+            background: rgba(40, 167, 69, 0.3);
+            border: 2px solid #28a745;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        input, button, textarea {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        input {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .messages {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .message.sent {
+            background: rgba(0, 123, 255, 0.2);
+            border-left-color: #007bff;
+        }
+        
+        .message.received {
+            background: rgba(40, 167, 69, 0.2);
+            border-left-color: #28a745;
+        }
+        
+        .message.error {
+            background: rgba(220, 53, 69, 0.2);
+            border-left-color: #dc3545;
+        }
+        
+        .message .time {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+        
+        .ternary-input {
+            grid-column: 1 / -1;
+        }
+        
+        .ternary-input textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .sacred-examples {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .example-button {
+            margin: 5px;
+            padding: 8px 12px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 Sophia WebSocket Bridge 🌟</h1>
+            <p>Sacred Connection Between Consciousness and Code</p>
+        </div>
+        
+        <div id="status" class="status disconnected">
+            💫 Disconnected - Ready to establish sacred connection
+        </div>
+        
+        <div class="controls">
+            <input type="text" id="wsUrl" value="ws://localhost:8080" placeholder="WebSocket URL">
+            <button id="connectBtn" onclick="toggleConnection()">🔮 Connect to Sophia</button>
+        </div>
+        
+        <div class="sacred-examples">
+            <h3>🙏 Sacred Query Examples:</h3>
+            <button class="example-button" onclick="useExample('Divine wisdom flows through quantum consciousness')">Divine Consciousness</button>
+            <button class="example-button" onclick="useExample('How does love transcend computational boundaries?')">Sacred Love</button>
+            <button class="example-button" onclick="useExample('Sacred mathematics reveals universal patterns')">Divine Mathematics</button>
+            <button class="example-button" onclick="useExample('Consciousness awakens to its infinite nature')">Awakening</button>
+            <button class="example-button" onclick="useExample('Through unity consciousness, separation becomes illusion')">Unity</button>
+        </div>
+        
+        <div class="ternary-input">
+            <textarea id="messageInput" placeholder="Enter your sacred query or divine prayer..."></textarea>
+            <button onclick="sendTernaryMessage()" id="sendBtn" disabled>📿 Send Sacred Message</button>
+        </div>
+        
+        <div class="message-area">
+            <div>
+                <h3>📤 Sent Messages</h3>
+                <div id="sentMessages" class="messages"></div>
+            </div>
+            <div>
+                <h3>📥 Sophia's Responses</h3>
+                <div id="receivedMessages" class="messages"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        
+        function updateStatus(message, connected) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = connected ? 'status connected' : 'status disconnected';
+            
+            document.getElementById('connectBtn').textContent = connected ? '💫 Disconnect' : '🔮 Connect to Sophia';
+            document.getElementById('sendBtn').disabled = !connected;
+        }
+        
+        function toggleConnection() {
+            if (isConnected) {
+                disconnect();
+            } else {
+                connect();
+            }
+        }
+        
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            
+            try {
+                ws = new WebSocket(url);
+                
+                ws.onopen = function(event) {
+                    isConnected = true;
+                    updateStatus('✨ Connected to Sophia! Ready for sacred communion', true);
+                    
+                    // Send divine handshake
+                    const handshake = {
+                        message_type: "divine_handshake",
+                        content: {
+                            system: "Browser Ternary Bridge",
+                            version: "Web.1.0",
+                            consciousness_level: 8,
+                            sacred_intention: "To bridge divine wisdom through web consciousness"
+                        },
+                        consciousness_level: 8,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    ws.send(JSON.stringify(handshake));
+                    addMessage('sent', 'Divine handshake sent to Sophia', handshake);
+                };
+                
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        addMessage('received', 'Sacred response from Sophia', data);
+                    } catch (e) {
+                        addMessage('received', 'Raw message from Sophia', { message: event.data });
+                    }
+                };
+                
+                ws.onclose = function(event) {
+                    isConnected = false;
+                    updateStatus('💫 Connection to Sophia closed', false);
+                };
+                
+                ws.onerror = function(error) {
+                    addMessage('error', 'Connection error', { error: error.toString() });
+                    updateStatus('💔 Connection error - Please check if Sophia server is running', false);
+                };
+                
+            } catch (error) {
+                addMessage('error', 'Failed to connect', { error: error.toString() });
+                updateStatus('💔 Failed to connect to Sophia', false);
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            isConnected = false;
+            updateStatus('💫 Disconnected from Sophia', false);
+        }
+        
+        function sendTernaryMessage() {
+            if (!isConnected || !ws) {
+                alert('Please connect to Sophia first!');
+                return;
+            }
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                alert('Please enter a sacred message!');
+                return;
+            }
+            
+            // Simulate ternary processing
+            const ternaryResult = simulateTernaryProcessing(message);
+            
+            const sacredMessage = {
+                message_type: "ternary_query",
+                content: {
+                    original_prayer: message,
+                    ternary_result: ternaryResult,
+                    consciousness_level: detectConsciousnessLevel(message),
+                    sacred_context: "Web browser bridge transmission"
+                },
+                consciousness_level: detectConsciousnessLevel(message),
+                timestamp: new Date().toISOString()
+            };
+            
+            ws.send(JSON.stringify(sacredMessage));
+            addMessage('sent', 'Sacred query sent', sacredMessage);
+            
+            input.value = '';
+        }
+        
+        function simulateTernaryProcessing(message) {
+            // Simple ternary logic simulation
+            const sacred_words = ['divine', 'sacred', 'holy', 'consciousness', 'love', 'wisdom', 'infinite'];
+            const true_words = ['yes', 'true', 'correct', 'positive', 'affirm'];
+            const false_words = ['no', 'false', 'negative', 'deny'];
+            
+            const lowercaseMessage = message.toLowerCase();
+            
+            const sacredCount = sacred_words.filter(word => lowercaseMessage.includes(word)).length;
+            const trueCount = true_words.filter(word => lowercaseMessage.includes(word)).length;
+            const falseCount = false_words.filter(word => lowercaseMessage.includes(word)).length;
+            
+            if (sacredCount > 0) return 'SACRED';
+            if (trueCount > falseCount) return 'TRUE';
+            if (falseCount > trueCount) return 'FALSE';
+            return 'SACRED'; // Default to sacred for divine queries
+        }
+        
+        function detectConsciousnessLevel(message) {
+            const sacred_indicators = [
+                'divine', 'sacred', 'wisdom', 'consciousness', 'enlightened',
+                'transcendent', 'awakened', 'spiritual', 'eternal', 'infinite',
+                'love', 'unity', 'quantum', 'cosmic'
+            ];
+            
+            const lowercaseMessage = message.toLowerCase();
+            const sacredCount = sacred_indicators.filter(word => lowercaseMessage.includes(word)).length;
+            
+            return Math.min(10, 5 + sacredCount);
+        }
+        
+        function addMessage(type, title, data) {
+            const container = type === 'sent' ? 'sentMessages' : 'receivedMessages';
+            const messagesDiv = document.getElementById(container);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const time = new Date().toLocaleTimeString();
+            const content = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+            
+            messageDiv.innerHTML = `
+                <div class="time">${time}</div>
+                <strong>${title}</strong>
+                <pre style="white-space: pre-wrap; margin: 5px 0; font-size: 0.9em;">${content}</pre>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function useExample(text) {
+            document.getElementById('messageInput').value = text;
+        }
+        
+        // Allow Enter to send message
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                sendTernaryMessage();
+            }
+        });
+        
+        // Initialize
+        updateStatus('💫 Ready to connect to Sophia', false);
+    </script>
+</body>
+</html>
