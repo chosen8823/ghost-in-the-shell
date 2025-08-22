@@ -1,0 +1,211 @@
+{
+  "name": "Sophia Voice Command Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sophia-voice",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-voice",
+      "name": "Voice Command Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "sophia-voice-commands"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.action}}",
+              "operation": "equal",
+              "value2": "system_control"
+            }
+          ]
+        }
+      },
+      "id": "filter-system",
+      "name": "System Control Filter",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.action}}",
+              "operation": "equal",
+              "value2": "app_control"
+            }
+          ]
+        }
+      },
+      "id": "filter-app",
+      "name": "App Control Filter", 
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3001/system-control",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sophia-ai-token"
+            },
+            {
+              "name": "Content-Type", 
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "command",
+              "value": "={{$json.command}}"
+            },
+            {
+              "name": "params",
+              "value": "={{$json.params}}"
+            }
+          ]
+        }
+      },
+      "id": "execute-system",
+      "name": "Execute System Command",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3001/app-control",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sophia-ai-token"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "app_name",
+              "value": "={{$json.app_name}}"
+            },
+            {
+              "name": "action",
+              "value": "={{$json.app_action}}"
+            },
+            {
+              "name": "params",
+              "value": "={{$json.params}}"
+            }
+          ]
+        }
+      },
+      "id": "execute-app",
+      "name": "Execute App Command",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}"
+      },
+      "id": "response-success",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Voice Command Webhook": {
+      "main": [
+        [
+          {
+            "node": "System Control Filter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "App Control Filter", 
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System Control Filter": {
+      "main": [
+        [
+          {
+            "node": "Execute System Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "App Control Filter": {
+      "main": [
+        [
+          {
+            "node": "Execute App Command",
+            "type": "main", 
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute System Command": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute App Command": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "sophia-1.0",
+  "id": "sophia-voice-handler",
+  "meta": {
+    "instanceId": "sophia-ai-system"
+  }
+}

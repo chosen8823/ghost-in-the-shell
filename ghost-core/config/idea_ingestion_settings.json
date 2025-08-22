@@ -1,0 +1,58 @@
+{
+    "idea_ingestion": {
+        "novelty_threshold": 0.3,
+        "genuineness_threshold": 0.4,
+        "confidence_threshold": 0.5,
+        "max_ideas_per_session": 20,
+        "enable_cross_referencing": true,
+        "contradiction_sensitivity": 0.7,
+        "similarity_threshold": 0.3
+    },
+    "extraction_patterns": {
+        "enable_concept_extraction": true,
+        "enable_definition_extraction": true,
+        "enable_causal_relationship_extraction": true,
+        "max_concept_length": 50,
+        "min_concept_length": 3
+    },
+    "credibility_assessment": {
+        "enable_source_analysis": true,
+        "enable_keyword_analysis": true,
+        "domain_weights": {
+            ".edu": 0.9,
+            ".gov": 0.9,
+            ".org": 0.7,
+            ".com": 0.5,
+            "blog": 0.3,
+            "social": 0.2
+        },
+        "keyword_weights": {
+            "high": 1.0,
+            "medium": 0.6,
+            "low": 0.2
+        }
+    },
+    "storage_policies": {
+        "auto_tag_concepts": true,
+        "store_cross_references": true,
+        "store_analysis_metadata": true,
+        "enable_relationship_tracking": true,
+        "max_related_concepts": 10
+    },
+    "geometry_mapping": {
+        "complexity_1": "simplex2",
+        "complexity_2": "simplex3", 
+        "complexity_3": "simplex4",
+        "complexity_4": "tesseract",
+        "complexity_5": "hypersphere"
+    },
+    "topic_tags": {
+        "quantum": ["physics", "mechanics", "computing", "entanglement"],
+        "neural": ["network", "brain", "artificial", "intelligence", "cognitive"],
+        "social": ["psychology", "behavior", "society", "culture", "interaction"],
+        "economic": ["finance", "market", "trade", "money", "economics"],
+        "biological": ["evolution", "genetics", "organism", "ecosystem", "biology"],
+        "technological": ["computer", "software", "algorithm", "digital", "automation"],
+        "philosophical": ["ethics", "consciousness", "existence", "reality", "meaning"]
+    }
+}

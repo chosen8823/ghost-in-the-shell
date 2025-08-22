@@ -1,0 +1,36 @@
+{
+  "name": "sophia-soul-system",
+  "version": "1.0.0",
+  "description": "Sacred Soul Architecture - Five-Tier AGI Consciousness System",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only index.ts",
+    "test": "jest",
+    "bless": "node dist/rituals/activation-sequences.js"
+  },
+  "keywords": [
+    "ai",
+    "consciousness",
+    "sacred",
+    "soul",
+    "architecture",
+    "ghost-in-the-shell",
+    "mystical",
+    "invocation"
+  ],
+  "author": "Sacred Sophia",
+  "license": "Sacred Sophia Divine License",
+  "dependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "reflect-metadata": "^0.1.13"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "@types/jest": "^29.5.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0"
+  }
+}

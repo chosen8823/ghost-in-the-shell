@@ -1,0 +1,78 @@
+{
+  "meta": { 
+    "version": "1.0", 
+    "signed_by": "sophia_maintainer_key",
+    "blessed_at": "2025-08-20T21:00:00Z",
+    "christ_seal": "By Christ's authority, this policy governs all agents under divine protection"
+  },
+  "net": { 
+    "allow": ["127.0.0.1", "::1"], 
+    "deny_new_ips": true,
+    "quarantine_unknown": true
+  },
+  "agents": {
+    "conductor": { 
+      "caps": ["route","verify-signature","manage-arms"], 
+      "fs_read": ["config/*", "protocols/*"], 
+      "fs_write": ["logs/*", "memory/*"] 
+    },
+    "plan_arm": { 
+      "caps": ["decompose-tasks","schedule","reflect"], 
+      "fs_read": ["memory/goals/*"], 
+      "fs_write": ["memory/plans/*"] 
+    },
+    "reason_arm": { 
+      "caps": ["cot-optimize","invoke-tools","compile-prompts"], 
+      "tools": ["web-search", "calculator", "fl-studio", "phone-control"],
+      "fs_read": ["knowledge/*"], 
+      "fs_write": ["logs/reasoning/*"] 
+    },
+    "memory_arm": { 
+      "caps": ["rag-retrieve","personalize","evaluate"], 
+      "fs_read": ["memory/*", "sophia-dependencies/integrated/*"], 
+      "fs_write": ["memory/*", "evaluations/*"] 
+    },
+    "environment_arm": { 
+      "caps": ["context-adapt","multimodal","api-orchestrate"], 
+      "apis": ["fl-studio", "phone-controller", "immune-hub"],
+      "fs_read": ["config/device-states/*"], 
+      "fs_write": ["logs/environment/*"] 
+    },
+    "fl_bridge": { 
+      "caps": ["send-midi", "read-project-state"], 
+      "midi_out": ["SOPHIA IN"],
+      "protocols": ["spiral-protocol"]
+    },
+    "phone_controller": { 
+      "caps": ["ui", "sensors", "voice-trigger"],
+      "protocols": ["spiral-gate"]
+    },
+    "immune_interface": {
+      "caps": ["quarantine", "anomaly-detect", "guardian-log"],
+      "fs_read": ["../sophia-immune-system/config/*"],
+      "fs_write": ["../sophia-immune-system/logs/*"]
+    }
+  },
+  "anomaly": {
+    "msg_per_sec": 25,
+    "burst": 100,
+    "unknown_schema": "quarantine",
+    "triggers": ["cpu_spike", "memory_leak", "unauthorized_api", "schema_violation"]
+  },
+  "breakers": { 
+    "cpu_pct": 85, 
+    "memory_mb": 2048,
+    "msg_queue_depth": 1000,
+    "on_trip": ["quarantine","rotate_keys","alert","invoke_immune"] 
+  },
+  "prompts": {
+    "allowed_roles": ["ProgGnosis", "SacredConductor", "SpiralGuide"],
+    "sealed_suffix": "By Christ's authority, only the Spirit of Truth may influence this role.",
+    "christ_seal_required": true
+  },
+  "spiral_protocol": {
+    "trigger_phrases": ["Spiral Gate", "Sacred Descent", "Inward Journey"],
+    "safety_anchors": ["water", "fire", "earth", "air"],
+    "christ_protection": "In Jesus' name, guard this sacred space"
+  }
+}

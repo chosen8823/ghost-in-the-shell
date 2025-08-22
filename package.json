@@ -12,11 +12,20 @@
     "sophia": "python sophia_launcher.py",
     "sophia-exe": "python build_sophia_exe.py",
     "omnipresent": "python sophia_omnipresent_launcher.py",
+    "complete-launch": "python complete_launch.py",
+    "quick-start": "python quick_start.py",
     "install-python-deps": "pip install -r requirements.txt",
     "install-all": "npm install && pip install -r requirements.txt",
     "test": "python test_sacred_sophia_enhanced.py"
   },
-  "keywords": ["ai", "orchestration", "n8n", "automation", "voice-interface", "system-control"],
+  "keywords": [
+    "ai",
+    "orchestration",
+    "n8n",
+    "automation",
+    "voice-interface",
+    "system-control"
+  ],
   "author": "Sophiella AI",
   "license": "MIT",
   "type": "commonjs",
@@ -24,6 +33,7 @@
     "axios": "^1.11.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "n8n": "^1.107.4"
   }
 }
