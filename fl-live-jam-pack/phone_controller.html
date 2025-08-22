@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sophia GroovePad - FL Studio Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0b0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e7f0ff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 12px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(79, 111, 255, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        
+        .status {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .controller-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 2fr 1fr 1fr;
+            gap: 8px;
+            padding: 8px;
+        }
+        
+        .pad-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .pad {
+            background: linear-gradient(145deg, #1e2a4a, #2a3f6a);
+            border: 2px solid #4f6fff;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            min-height: 80px;
+        }
+        
+        .pad:active {
+            background: linear-gradient(145deg, #4f6fff, #7a8fff);
+            transform: scale(0.95);
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .pad.active {
+            background: linear-gradient(145deg, #ff6b6b, #ff8e8e);
+            border-color: #ff6b6b;
+        }
+        
+        .pad-label {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
+        .knobs-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+        }
+        
+        .knob {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #2a3f6a, #1e2a4a);
+            border: 3px solid #4f6fff;
+            position: relative;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        
+        .knob::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            width: 3px;
+            height: 20px;
+            background: #e7f0ff;
+            border-radius: 2px;
+            transform-origin: center bottom;
+            transform: translateX(-50%) rotate(var(--rotation, -135deg));
+            transition: transform 0.1s ease;
+        }
+        
+        .knob-label {
+            font-size: 10px;
+            text-align: center;
+            opacity: 0.8;
+        }
+        
+        .xy-section {
+            background: linear-gradient(145deg, #1e2a4a, #2a3f6a);
+            border: 2px solid #4f6fff;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        .xy-pad {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .xy-cursor {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ff6b6b;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            transition: all 0.1s ease;
+        }
+        
+        .xy-labels {
+            position: absolute;
+            inset: 8px;
+            pointer-events: none;
+            font-size: 10px;
+            opacity: 0.6;
+        }
+        
+        .xy-labels .x-label {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .xy-labels .y-label {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%) rotate(-90deg);
+        }
+        
+        .connected {
+            border-color: #7fffa7 !important;
+        }
+        
+        .error {
+            border-color: #ff7a7a !important;
+        }
+        
+        .mirror-active {
+            animation: mirror-pulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes mirror-pulse {
+            0% { box-shadow: 0 0 20px rgba(79, 111, 255, 0.5); }
+            100% { box-shadow: 0 0 40px rgba(255, 107, 107, 0.8); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SOPHIA GROOVEPAD</h1>
+        <div class="status" id="status">Connecting to FL Studio...</div>
+    </div>
+    
+    <div class="controller-grid">
+        <!-- Pads Section -->
+        <div class="pad-section">
+            <div class="pad" data-pad="1">
+                <div>TRANSPORT</div>
+                <div class="pad-label">Get Suggestions</div>
+            </div>
+            <div class="pad" data-pad="2">
+                <div>ENERGY</div>
+                <div class="pad-label">Lift Vibe</div>
+            </div>
+            <div class="pad" data-pad="3">
+                <div>MIRROR</div>
+                <div class="pad-label">8-20-2025</div>
+            </div>
+            <div class="pad" data-pad="4">
+                <div>ROOM</div>
+                <div class="pad-label">Auto Mix</div>
+            </div>
+        </div>
+        
+        <!-- Knobs Section -->
+        <div class="knobs-section">
+            <div class="knob-container">
+                <div class="knob" data-knob="filter"></div>
+                <div class="knob-label">FILTER</div>
+            </div>
+            <div class="knob-container">
+                <div class="knob" data-knob="reverb"></div>
+                <div class="knob-label">REVERB</div>
+            </div>
+            <div class="knob-container">
+                <div class="knob" data-knob="drive"></div>
+                <div class="knob-label">DRIVE</div>
+            </div>
+        </div>
+        
+        <!-- XY Pad Section -->
+        <div class="xy-section">
+            <div class="xy-pad" id="xyPad">
+                <div class="xy-cursor" id="xyCursor"></div>
+                <div class="xy-labels">
+                    <div class="x-label">Cutoff</div>
+                    <div class="y-label">Resonance</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SophiaGroovePad {
+            constructor() {
+                this.websocket = null;
+                this.connected = false;
+                this.knobValues = { filter: 0.5, reverb: 0.3, drive: 0.4 };
+                this.xyValues = { x: 0.5, y: 0.5 };
+                this.activePads = new Set();
+                
+                this.init();
+            }
+            
+            init() {
+                this.connectToHub();
+                this.setupPadListeners();
+                this.setupKnobListeners();
+                this.setupXYPad();
+                this.updateKnobVisuals();
+                this.updateXYCursor();
+            }
+            
+            async connectToHub() {
+                try {
+                    this.websocket = new WebSocket('ws://localhost:8765');
+                    
+                    this.websocket.onopen = () => {
+                        this.connected = true;
+                        this.updateStatus('Connected to Sophia Hub', 'connected');
+                        this.sendHello();
+                    };
+                    
+                    this.websocket.onmessage = (event) => {
+                        this.handleHubMessage(JSON.parse(event.data));
+                    };
+                    
+                    this.websocket.onclose = () => {
+                        this.connected = false;
+                        this.updateStatus('Disconnected - Retrying...', 'error');
+                        setTimeout(() => this.connectToHub(), 3000);
+                    };
+                    
+                    this.websocket.onerror = () => {
+                        this.connected = false;
+                        this.updateStatus('Connection Error', 'error');
+                    };
+                    
+                } catch (error) {
+                    this.updateStatus('Failed to connect', 'error');
+                    setTimeout(() => this.connectToHub(), 3000);
+                }
+            }
+            
+            sendHello() {
+                this.sendMessage({
+                    fn: 'hello',
+                    client: 'Sophia GroovePad'
+                });
+            }
+            
+            sendMessage(data) {
+                if (this.connected && this.websocket) {
+                    this.websocket.send(JSON.stringify(data));
+                }
+            }
+            
+            handleHubMessage(data) {
+                if (data.ok) {
+                    if (data.type === 'mirrorDrop') {
+                        this.activateMirrorMode();
+                    }
+                    
+                    if (data.suggestions) {
+                        console.log('Sophia suggestions:', data.suggestions);
+                    }
+                }
+            }
+            
+            updateStatus(message, type = '') {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = message;
+                statusEl.className = `status ${type}`;
+            }
+            
+            setupPadListeners() {
+                document.querySelectorAll('.pad').forEach(pad => {
+                    const padNumber = parseInt(pad.dataset.pad);
+                    
+                    pad.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        this.triggerPad(padNumber, pad);
+                    });
+                    
+                    pad.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        this.triggerPad(padNumber, pad);
+                    });
+                    
+                    pad.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        this.releasePad(padNumber, pad);
+                    });
+                    
+                    pad.addEventListener('mouseup', (e) => {
+                        e.preventDefault();
+                        this.releasePad(padNumber, pad);
+                    });
+                });
+            }
+            
+            triggerPad(padNumber, element) {
+                element.classList.add('active');
+                this.activePads.add(padNumber);
+                
+                const message = {
+                    fn: 'phoneController',
+                    pad: padNumber
+                };
+                
+                this.sendMessage(message);
+                
+                // Haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }
+            
+            releasePad(padNumber, element) {
+                element.classList.remove('active');
+                this.activePads.delete(padNumber);
+            }
+            
+            setupKnobListeners() {
+                document.querySelectorAll('.knob').forEach(knob => {
+                    const knobType = knob.dataset.knob;
+                    let isDragging = false;
+                    let startY = 0;
+                    let startValue = this.knobValues[knobType];
+                    
+                    const startDrag = (clientY) => {
+                        isDragging = true;
+                        startY = clientY;
+                        startValue = this.knobValues[knobType];
+                    };
+                    
+                    const updateDrag = (clientY) => {
+                        if (!isDragging) return;
+                        
+                        const deltaY = (startY - clientY) / 100; // Sensitivity
+                        const newValue = Math.max(0, Math.min(1, startValue + deltaY));
+                        
+                        this.knobValues[knobType] = newValue;
+                        this.updateKnobVisual(knob, newValue);
+                        this.sendKnobValue(knobType, newValue);
+                    };
+                    
+                    const endDrag = () => {
+                        isDragging = false;
+                    };
+                    
+                    // Touch events
+                    knob.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        startDrag(e.touches[0].clientY);
+                    });
+                    
+                    knob.addEventListener('touchmove', (e) => {
+                        e.preventDefault();
+                        updateDrag(e.touches[0].clientY);
+                    });
+                    
+                    knob.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        endDrag();
+                    });
+                    
+                    // Mouse events
+                    knob.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        startDrag(e.clientY);
+                    });
+                    
+                    document.addEventListener('mousemove', (e) => {
+                        updateDrag(e.clientY);
+                    });
+                    
+                    document.addEventListener('mouseup', endDrag);
+                });
+            }
+            
+            updateKnobVisual(knob, value) {
+                const rotation = -135 + (value * 270); // -135° to +135°
+                knob.style.setProperty('--rotation', `${rotation}deg`);
+            }
+            
+            updateKnobVisuals() {
+                document.querySelectorAll('.knob').forEach(knob => {
+                    const knobType = knob.dataset.knob;
+                    this.updateKnobVisual(knob, this.knobValues[knobType]);
+                });
+            }
+            
+            sendKnobValue(knobType, value) {
+                const ccMap = { filter: 1, reverb: 2, drive: 3 };
+                const ccValue = Math.round(value * 127);
+                
+                const message = {
+                    fn: 'phoneController',
+                    knob: {
+                        cc: ccMap[knobType],
+                        value: ccValue
+                    }
+                };
+                
+                this.sendMessage(message);
+            }
+            
+            setupXYPad() {
+                const xyPad = document.getElementById('xyPad');
+                let isDragging = false;
+                
+                const updateXY = (clientX, clientY) => {
+                    const rect = xyPad.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                    const y = Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height));
+                    
+                    this.xyValues = { x, y };
+                    this.updateXYCursor();
+                    this.sendXYValue(x, y);
+                };
+                
+                // Touch events
+                xyPad.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    updateXY(touch.clientX, touch.clientY);
+                });
+                
+                xyPad.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (isDragging) {
+                        const touch = e.touches[0];
+                        updateXY(touch.clientX, touch.clientY);
+                    }
+                });
+                
+                xyPad.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    isDragging = false;
+                });
+                
+                // Mouse events
+                xyPad.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    updateXY(e.clientX, e.clientY);
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        updateXY(e.clientX, e.clientY);
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+            }
+            
+            updateXYCursor() {
+                const cursor = document.getElementById('xyCursor');
+                const x = this.xyValues.x * 100;
+                const y = (1 - this.xyValues.y) * 100; // Flip Y for screen coordinates
+                
+                cursor.style.left = `${x}%`;
+                cursor.style.top = `${y}%`;
+            }
+            
+            sendXYValue(x, y) {
+                const message = {
+                    fn: 'phoneController',
+                    xy: { x, y }
+                };
+                
+                this.sendMessage(message);
+            }
+            
+            activateMirrorMode() {
+                document.body.classList.add('mirror-active');
+                setTimeout(() => {
+                    document.body.classList.remove('mirror-active');
+                }, 2000);
+            }
+        }
+        
+        // Initialize the GroovePad when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new SophiaGroovePad();
+        });
+        
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>

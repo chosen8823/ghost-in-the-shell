@@ -1,0 +1,25 @@
+# FL Live Jam Pack - Python Dependencies
+# For FL Studio bridge, room analysis, and audio processing
+
+# WebSocket communication
+websockets>=11.0
+
+# Audio processing and analysis
+numpy>=1.24.0
+scipy>=1.10.0
+sounddevice>=0.4.6
+
+# MIDI handling (optional, for advanced FL integration)
+python-rtmidi>=1.5.0
+mido>=1.3.0
+
+# Additional audio analysis
+librosa>=0.10.0
+pyaudio>=0.2.11
+
+# Async utilities
+asyncio-mqtt>=0.13.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0

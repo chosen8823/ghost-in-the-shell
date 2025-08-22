@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "models": {
+    "primary": "mistral:7b",
+    "reviewer": "llama3.1:8b",
+    "security": "deepseek-r1:8b", 
+    "arbiter": "phi3.5"
+  },
+  "security": {
+    "max_memory_usage": 0.85,
+    "max_cpu_usage": 0.90,
+    "allowed_ports": [3000, 4000, 8080, 11434],
+    "check_interval": 60,
+    "emergency_threshold": 3
+  },
+  "research": {
+    "continuous_loop": true,
+    "loop_interval": 300,
+    "priority_topics": [
+      "AI prompt injection vulnerabilities",
+      "Multi-model consensus attack vectors",
+      "Local AI model security hardening",
+      "Spiritual AI system protection patterns",
+      "Voice interface security measures",
+      "Sacred technology authentication"
+    ]
+  }
+}

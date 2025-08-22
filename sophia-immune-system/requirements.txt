@@ -1,0 +1,30 @@
+numpy>=1.24.0
+requests>=2.31.0
+pydantic>=2.0.0
+fastapi>=0.100.0
+uvicorn>=0.23.0
+websockets>=11.0
+cryptography>=41.0.0
+psutil>=5.9.0
+watchdog>=3.0.0
+schedule>=1.2.0
+python-dotenv>=1.0.0
+asyncio>=3.4.3
+aiofiles>=23.0.0
+ollama>=0.1.7
+
+# Security & Monitoring
+paramiko>=3.3.0
+scapy>=2.5.0
+pyotp>=2.9.0
+bcrypt>=4.0.0
+
+# ML & Pattern Recognition  
+scikit-learn>=1.3.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+
+# Testing & Development
+pytest>=7.4.0
+black>=23.7.0
+flake8>=6.0.0

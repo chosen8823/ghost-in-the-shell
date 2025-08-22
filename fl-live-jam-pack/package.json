@@ -1,0 +1,35 @@
+{
+  "name": "fl-live-jam-pack",
+  "version": "1.0.0",
+  "description": "Sophia Live Jam System - FL Studio + AI Producer Integration",
+  "main": "sophia_hub.js",
+  "type": "module",
+  "scripts": {
+    "start": "node sophia_hub.js",
+    "bridge": "python fl_bridge.py",
+    "room": "python room_sense.py",
+    "install-deps": "npm install && pip install -r requirements.txt",
+    "test-hub": "node test_hub.js"
+  },
+  "keywords": [
+    "fl-studio",
+    "ai",
+    "music-production",
+    "live-jamming",
+    "sophia",
+    "websocket",
+    "automation"
+  ],
+  "author": "Sophia Core & Ryan",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "python": ">=3.8.0"
+  }
+}
