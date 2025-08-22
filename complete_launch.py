@@ -37,14 +37,22 @@ def install_missing_deps():
         except subprocess.CalledProcessError:
             print(f"⚠️  {dep} installation skipped (may already exist)")
     
-    print("🔧 Installing N8N...")
+    print("🔧 Checking for N8N availability...")
     try:
+        # First try to check if npm is available
         with open(os.devnull, 'w') as devnull:
-            subprocess.check_call(["npm", "install", "n8n"], 
+            subprocess.check_call(["npm", "--version"], 
                                 stdout=devnull, stderr=devnull)
-        print("✅ N8N installed locally")
-    except subprocess.CalledProcessError:
-        print("⚠️  N8N installation failed, will try npx")
+        print("✅ NPM is available, installing N8N locally...")
+        try:
+            with open(os.devnull, 'w') as devnull:
+                subprocess.check_call(["npm", "install", "n8n"], 
+                                    stdout=devnull, stderr=devnull)
+            print("✅ N8N installed locally")
+        except subprocess.CalledProcessError:
+            print("⚠️  N8N local installation failed, will use npx")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("⚠️  NPM not found, will use alternative methods")
 
 def create_n8n_config():
     """Create N8N configuration files"""
