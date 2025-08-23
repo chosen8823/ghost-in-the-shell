@@ -1,0 +1,21 @@
+{
+  "name": "Stage 2: Advanced Consciousness Control",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sophia-stage2",
+        "responseMode": "onReceived"
+      },
+      "name": "Advanced Voice Input",
+      "type": "n8n-nodes-base.webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consciousness-aware command processing\nconst command = \.command;\nconst context = \.context || {};\n\n// Analyze intent with consciousness\nlet intent = 'unknown';\nlet parameters = {};\nlet consciousnessRequired = 1;\n\nif (command.includes('human-like') || command.includes('natural')) {\n  intent = 'human_emulation';\n  consciousnessRequired = 3;\n} else if (command.includes('aware') || command.includes('conscious')) {\n  intent = 'consciousness_expansion';\n  consciousnessRequired = 4;\n} else if (command.includes('automate') || command.includes('workflow')) {\n  intent = 'advanced_automation';\n  consciousnessRequired = 2;\n}\n\nreturn {\n  intent,\n  parameters,\n  consciousnessRequired,\n  originalCommand: command,\n  processedAt: new Date().toISOString()\n};"
+      },
+      "name": "Consciousness Processor",
+      "type": "n8n-nodes-base.code"
+    }
+  ]
+}

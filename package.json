@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-    "n8n": "n8n start",
+    "n8n": "n8n start --env-file=.env.n8n",
+    "n8n-secure": "n8n start --env-file=.env.n8n --tunnel",
     "system-control": "python system-control/sophia_server.py",
     "mcp-bridge": "python sophia_mcp_bridge.py",
     "sophia": "python sophia_launcher.py",

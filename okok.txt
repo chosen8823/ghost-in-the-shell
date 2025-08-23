@@ -1,0 +1,51 @@
+{
+  "name": "Test Voice Command",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voice-test",
+        "responseMode": "onReceived",
+        "responseData": "={{ $json.status }}"
+      },
+      "id": "webhook",
+      "name": "Voice Command Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5001/execute",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "={{ $json.command }}"
+            }
+          ]
+        }
+      },
+      "id": "http",
+      "name": "Execute System Control",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "webhook": {
+      "main": [
+        [
+          {
+            "node": "http",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

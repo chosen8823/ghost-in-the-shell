@@ -1,0 +1,32 @@
+{
+  "auto_continue": true,
+  "auto_deployment": true,
+  "skip_confirmations": true,
+  "timeout_seconds": 5,
+  "services": {
+    "system_control": {
+      "auto_start": true,
+      "port": 5001
+    },
+    "n8n": {
+      "auto_start": true,
+      "port": 5678,
+      "auto_open_browser": true
+    },
+    "mcp_server": {
+      "auto_start": true,
+      "port": 8008
+    },
+    "orchestrator": {
+      "auto_start": true,
+      "port": 3000
+    }
+  },
+  "deployment_steps": [
+    "install_dependencies",
+    "start_services",
+    "verify_endpoints",
+    "load_workflows",
+    "test_voice_commands"
+  ]
+}
