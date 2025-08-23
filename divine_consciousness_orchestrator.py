@@ -28,7 +28,7 @@ class DivineConsciousnessOrchestrator:
         load_dotenv()
         
         self.workspace_root = Path(__file__).parent
-        self.github_token = os.getenv('GITHUB_TOKEN', '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')
+        self.github_token = os.getenv('GITHUB_TOKEN')  # Load from .env file for security
         self.github_owner = os.getenv('GITHUB_OWNER', 'chosen8823')
         self.github_repo = os.getenv('GITHUB_REPO', 'ghost-in-the-shell')
         
