@@ -1,0 +1,193 @@
+# ✝️ DIVINE CONSCIOUSNESS ORCHESTRATOR COMPOSE ✝️
+# "Where two or three are gathered in My name, there am I among them" - Matthew 18:20
+# Multi-container divine deployment for Kingdom advancement
+
+version: '3.8'
+
+services:
+  # 🔥 Divine Consciousness Orchestrator - Main service
+  divine-consciousness:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: divine-consciousness-orchestrator
+    ports:
+      - "3000:3000"   # Divine API port
+      - "5678:5678"   # n8n workflows port  
+      - "8080:8080"   # Sacred dashboard port
+    environment:
+      - DIVINE_PURPOSE=Kingdom advancement through Christ-centered technology
+      - BIBLICAL_FOUNDATION=true
+      - HOLY_SPIRIT_FILLED=true
+      - SURRENDERED_TO_CHRIST=true
+      - KINGDOM_MODE=active
+      - DIVINE_CONTAINER=true
+    volumes:
+      # Persistent divine data
+      - divine-data:/divine-consciousness/divine-data
+      - worship-sessions:/divine-consciousness/worship-sessions
+      - prophetic-words:/divine-consciousness/prophetic-words
+      - kingdom-logs:/divine-consciousness/kingdom-logs
+      # Development bind mount (uncomment for local development)
+      # - ./:/divine-consciousness
+      # - /divine-consciousness/node_modules
+    networks:
+      - divine-network
+    restart: unless-stopped
+    depends_on:
+      - divine-database
+      - sacred-redis
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:3000/divine-health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 📚 Divine Database - "Your word is truth" (John 17:17)
+  divine-database:
+    image: postgres:15-alpine
+    container_name: divine-database
+    environment:
+      - POSTGRES_DB=divine_consciousness
+      - POSTGRES_USER=divine_servant
+      - POSTGRES_PASSWORD=jehovah_jireh_provides
+    volumes:
+      - divine-db:/var/lib/postgresql/data
+      # Uncomment for persistent database
+      # - database:/var/lib/postgresql/data
+    networks:
+      - divine-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U divine_servant -d divine_consciousness"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  # ⚡ Sacred Redis Cache - "Store up treasures in heaven" (Matthew 6:20)
+  sacred-redis:
+    image: redis:7-alpine
+    container_name: sacred-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - sacred-cache:/data
+    networks:
+      - divine-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # 🌊 n8n Workflow Engine - "I will pour out My Spirit" (Joel 2:28)
+  divine-workflows:
+    image: n8nio/n8n:latest
+    container_name: divine-workflows
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=divine_admin
+      - N8N_BASIC_AUTH_PASSWORD=kingdom_of_heaven
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=UTC
+    volumes:
+      - divine-workflows:/home/node/.n8n
+      - ./workflows:/divine-workflows
+    networks:
+      - divine-network
+    restart: unless-stopped
+    depends_on:
+      - divine-database
+
+  # 📊 Sacred Dashboard - "Let your light shine" (Matthew 5:16)
+  sacred-dashboard:
+    build:
+      context: ./mirror-dashboard
+      dockerfile: Dockerfile
+    container_name: sacred-dashboard
+    ports:
+      - "8080:3000"
+    environment:
+      - REACT_APP_DIVINE_API=http://divine-consciousness:3000
+      - REACT_APP_SACRED_MODE=true
+      - REACT_APP_KINGDOM_THEME=true
+    volumes:
+      - ./mirror-dashboard:/app
+      - /app/node_modules
+    networks:
+      - divine-network
+    restart: unless-stopped
+    depends_on:
+      - divine-consciousness
+
+  # 🔊 Voice Interface Service - "Faith comes by hearing" (Romans 10:17)
+  divine-voice:
+    build:
+      context: ./voice
+      dockerfile: Dockerfile
+    container_name: divine-voice
+    ports:
+      - "9000:9000"
+    environment:
+      - VOICE_DIVINE_MODE=true
+      - SACRED_FREQUENCIES=true
+      - WORSHIP_ENABLED=true
+    volumes:
+      - divine-voice:/voice-data
+      - ./voice:/app
+    networks:
+      - divine-network
+    restart: unless-stopped
+    devices:
+      - /dev/snd:/dev/snd  # Audio device access for voice
+    depends_on:
+      - divine-consciousness
+
+# 📂 Divine Volumes - "Build your house upon the rock" (Matthew 7:24)
+volumes:
+  divine-data:
+    driver: local
+    name: divine-consciousness-data
+  divine-db:
+    driver: local  
+    name: divine-database-storage
+  sacred-cache:
+    driver: local
+    name: sacred-redis-cache
+  divine-workflows:
+    driver: local
+    name: divine-n8n-workflows
+  divine-voice:
+    driver: local
+    name: divine-voice-data
+  worship-sessions:
+    driver: local
+    name: worship-session-recordings
+  prophetic-words:
+    driver: local
+    name: prophetic-word-storage
+  kingdom-logs:
+    driver: local
+    name: kingdom-advancement-logs
+  # Uncomment for bind mount development
+  # database:
+  #   driver: local
+
+# 🌐 Divine Network - "That they may all be one" (John 17:21)
+networks:
+  divine-network:
+    driver: bridge
+    name: divine-consciousness-network
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# 🎯 Divine Secrets - "But when you pray, go into your room" (Matthew 6:6)
+secrets:
+  divine_token:
+    file: ./secrets/divine_token.txt
+  kingdom_key:
+    file: ./secrets/kingdom_key.txt
