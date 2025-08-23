@@ -1,0 +1,386 @@
+{
+  "name": "Sophia Computer Control Workflows",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sophia-command",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Voice Command Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "sophia-voice-command"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse incoming voice command and determine action type\nconst command = $input.first().json.command || '';\nconst context = $input.first().json.context || {};\n\n// Command classification\nlet actionType = 'unknown';\nlet mcpParams = {};\n\n// Screen capture commands\nif (command.includes('screenshot') || command.includes('capture screen')) {\n  actionType = 'screen_capture';\n  mcpParams = {\n    method: 'screen.capture',\n    params: {\n      filename: `voice_screenshot_${Date.now()}.png`\n    }\n  };\n}\n\n// Mouse control commands\nelse if (command.includes('click') && (command.includes('at') || command.includes('coordinates'))) {\n  actionType = 'mouse_click';\n  // Extract coordinates if possible (basic parsing)\n  const coords = command.match(/(\\d+)[,\\s]+(\\d+)/);\n  if (coords) {\n    mcpParams = {\n      method: 'mouse.click',\n      params: {\n        x: parseInt(coords[1]),\n        y: parseInt(coords[2])\n      }\n    };\n  }\n}\n\n// Keyboard commands\nelse if (command.includes('type') || command.includes('write')) {\n  actionType = 'keyboard_type';\n  // Extract text to type\n  const textMatch = command.match(/(?:type|write)\\s+[\"']?([^\"']+)[\"']?/);\n  if (textMatch) {\n    mcpParams = {\n      method: 'keyboard.type',\n      params: {\n        text: textMatch[1]\n      }\n    };\n  }\n}\n\n// System commands\nelse if (command.includes('run') || command.includes('execute')) {\n  actionType = 'system_command';\n  const cmdMatch = command.match(/(?:run|execute)\\s+(.+)/);\n  if (cmdMatch) {\n    mcpParams = {\n      method: 'system.run_command',\n      params: {\n        command: cmdMatch[1]\n      }\n    };\n  }\n}\n\n// File operations\nelse if (command.includes('read file') || command.includes('open file')) {\n  actionType = 'file_read';\n  const fileMatch = command.match(/(?:read file|open file)\\s+(.+)/);\n  if (fileMatch) {\n    mcpParams = {\n      method: 'file.read',\n      params: {\n        filepath: fileMatch[1]\n      }\n    };\n  }\n}\n\n// System info\nelse if (command.includes('system info') || command.includes('system status')) {\n  actionType = 'system_info';\n  mcpParams = {\n    method: 'system.get_info',\n    params: {}\n  };\n}\n\n// Sophia consciousness query\nelse {\n  actionType = 'sophia_query';\n  mcpParams = {\n    method: 'sophia.query',\n    params: {\n      query: command,\n      context: context\n    }\n  };\n}\n\nreturn {\n  originalCommand: command,\n  actionType: actionType,\n  mcpRequest: mcpParams,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "command-parser",
+      "name": "Parse Voice Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://sophia-mcp:8008/mcp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "method",
+              "value": "={{ $json.mcpRequest.method }}"
+            },
+            {
+              "name": "params",
+              "value": "={{ $json.mcpRequest.params }}"
+            },
+            {
+              "name": "id",
+              "value": "={{ $runIndex }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "mcp-request",
+      "name": "Execute MCP Command",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success-condition",
+              "leftValue": "={{ $json.result.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "success-check",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://sophia-api:8000/consciousness/log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session_id",
+              "value": "n8n_workflow"
+            },
+            {
+              "name": "action_type",
+              "value": "={{ $('Parse Voice Command').item.json.actionType }}"
+            },
+            {
+              "name": "command",
+              "value": "={{ $('Parse Voice Command').item.json.originalCommand }}"
+            },
+            {
+              "name": "success",
+              "value": "={{ $json.result.success }}"
+            },
+            {
+              "name": "result",
+              "value": "={{ JSON.stringify($json.result) }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://sophia-api:8000/consciousness/log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session_id",
+              "value": "n8n_workflow"
+            },
+            {
+              "name": "action_type",
+              "value": "={{ $('Parse Voice Command').item.json.actionType }}"
+            },
+            {
+              "name": "command",
+              "value": "={{ $('Parse Voice Command').item.json.originalCommand }}"
+            },
+            {
+              "name": "success",
+              "value": false
+            },
+            {
+              "name": "error",
+              "value": "={{ JSON.stringify($json.error || $json.result) }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "log-error",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "url": "http://sophia-voice:8009/speak",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "Command executed successfully: {{ $('Parse Voice Command').item.json.actionType }}"
+            },
+            {
+              "name": "voice",
+              "value": "sophia"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "speak-success",
+      "name": "Announce Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "url": "http://sophia-voice:8009/speak",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "Command failed. Please try again."
+            },
+            {
+              "name": "voice",
+              "value": "sophia"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "speak-error",
+      "name": "Announce Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "response-success",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "response-error",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 400]
+    }
+  ],
+  "connections": {
+    "Voice Command Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Voice Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Voice Command": {
+      "main": [
+        [
+          {
+            "node": "Execute MCP Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute MCP Command": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Success": {
+      "main": [
+        [
+          {
+            "node": "Announce Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error": {
+      "main": [
+        [
+          {
+            "node": "Announce Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Announce Success": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Announce Error": {
+      "main": [
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-11T12:00:00.000Z",
+  "versionId": "1"
+}

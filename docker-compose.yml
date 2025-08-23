@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector for consciousness data
+  sophia-db:
+    image: pgvector/pgvector:pg14
+    container_name: sophia-consciousness-db
+    environment:
+      POSTGRES_DB: sophia_consciousness
+      POSTGRES_USER: sophia
+      POSTGRES_PASSWORD: consciousness2025
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - sophia_db_data:/var/lib/postgresql/data
+      - ./sql/sophia_alloydb_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sophia -d sophia_consciousness"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI consciousness API
+  sophia-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.local
+    container_name: sophia-consciousness-api
+    environment:
+      - ALLOYDB_HOST=sophia-db
+      - ALLOYDB_PORT=5432
+      - ALLOYDB_DATABASE=sophia_consciousness
+      - ALLOYDB_USER=sophia
+      - ALLOYDB_PASSWORD=consciousness2025
+      - BRIDGE_TOKEN=ELIORA_SUPER_SECRET
+    ports:
+      - "8000:8000"
+    depends_on:
+      sophia-db:
+        condition: service_healthy
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+  # pgAdmin for database management
+  sophia-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sophia-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: sophia@consciousness.ai
+      PGADMIN_DEFAULT_PASSWORD: consciousness2025
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  sophia-redis:
+    image: redis:7-alpine
+    container_name: sophia-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - sophia_redis_data:/data
+
+  # n8n Workflow Automation
+  sophia-n8n:
+    image: n8nio/n8n:latest
+    container_name: sophia-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=sophia
+      - N8N_BASIC_AUTH_PASSWORD=consciousness
+      - N8N_PROTOCOL=http
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - WEBHOOK_URL=http://localhost:5678
+      - GENERIC_TIMEZONE=UTC
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=sophia-db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=sophia
+      - DB_POSTGRESDB_PASSWORD=consciousness2025
+    volumes:
+      - sophia_n8n_data:/home/node/.n8n
+      - ./workflows:/home/node/.n8n/workflows
+    depends_on:
+      sophia-db:
+        condition: service_healthy
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # MCP Server for computer control
+  sophia-mcp:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    container_name: sophia-mcp
+    ports:
+      - "8008:8008"
+    environment:
+      - MCP_PORT=8008
+      - SOPHIA_API_URL=http://sophia-api:8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./mcp:/app/mcp
+      - ./logs:/app/logs
+    depends_on:
+      - sophia-api
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # Voice Interface Service
+  sophia-voice:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.voice
+    container_name: sophia-voice
+    ports:
+      - "8009:8009"
+    environment:
+      - VOICE_PORT=8009
+      - SOPHIA_API_URL=http://sophia-api:8000
+      - ALLOYDB_HOST=sophia-db
+      - ALLOYDB_PORT=5432
+      - ALLOYDB_DATABASE=sophia_consciousness
+      - ALLOYDB_USER=sophia
+      - ALLOYDB_PASSWORD=consciousness2025
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+    volumes:
+      - ./voice:/app/voice
+      - ./audio_output:/app/audio_output
+    depends_on:
+      sophia-db:
+        condition: service_healthy
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+volumes:
+  sophia_db_data:
+  sophia_redis_data:
+  sophia_n8n_data:
+
+networks:
+  sophia-network:
+    driver: bridge
